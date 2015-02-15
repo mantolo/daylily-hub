@@ -6,6 +6,7 @@
     "duplicator": "^0.1.1",
     "es6-promise": "^2.0.1",
     "express": "^4.10.2",
+    "keymirror": "^0.1.1",
     "socket.io": "^1.3.4"
   },
   "scripts": {
