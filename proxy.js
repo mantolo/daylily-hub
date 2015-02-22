@@ -7,11 +7,10 @@ var url = require('url');
 var hub = require('./js/hub');
 
 var listenPort = 80;
-var forwardTo = { //// origin server setting
+var origin = { //// origin server setting
 	host: '127.0.0.1',
 	port: 81	
 };
-
 var requestOptions = {
 	port: listenPort,
 	hostname: '127.0.0.1',
@@ -21,15 +20,16 @@ var requestOptions = {
 function httpHandle(req, res) {
 	// make a request to tunneling proxy
 	var newreq;
-
-	requestOptions.path = forwardTo.host + ':' + forwardTo.port +  req.url;
+	requestOptions.hostname = req.headers['host'];
+	requestOptions.path = origin.host + ':' + origin.port +  req.url;
 
 	newreq = http.request(requestOptions);	
 	newreq.on('error', function(e){ console.log('error', e); res.end(); });
 	newreq.on('connect', function(res2, socket, head) {
 	    // make a request over an HTTP tunnel
 	    socket.write(req.method + ' '+ req.url +' HTTP/1.1\r\n' +
-	                 'Host: '+ forwardTo.host + ':' + forwardTo.port +'\r\n' +
+	                 //'Host: '+ origin.host + ':' + forwardTo.port +'\r\n' +
+	                 'Host: '+  req.headers['host'] +'\r\n' +
 	                 'Connection: close\r\n' +
 	                 '\r\n');
 	    socket.on('data', function(chunk) {	      
@@ -46,8 +46,7 @@ function httpHandle(req, res) {
 
 //// HTTP tunneling handling (server side) 
 proxy.on('connect', function(req, cltSocket, head) {
-  // Target: connect to an origin server, pipe two streams
-  console.log('REQUEST', req.url);
+  // Target: connect to an origin server, pipe two streams  
   var srvUrl = url.parse('http://' + req.url);
   var srvSocket = net.connect(srvUrl.port, srvUrl.hostname, function() {
   	/// tell proxy client
@@ -62,7 +61,7 @@ proxy.on('connect', function(req, cltSocket, head) {
 });
 
 // now that proxy is running
-proxy.listen(listenPort, '127.0.0.1', function() {
+proxy.listen(listenPort, '0.0.0.0', function() {
 	console.log('started listening');
 });
 
